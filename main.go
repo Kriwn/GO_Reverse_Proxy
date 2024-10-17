@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	"github.com/Kriwn/Go_Reverse_Proxy/RedisPkg"
-	router "github.com/Kriwn/Go_Reverse_Proxy/Router"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
 	"github.com/redis/go-redis/v9"
@@ -86,8 +85,7 @@ func main() {
 	rdb, ctx := redisPkg.InitRedis()
 
 	app.Get("/api/*", func(c *fiber.Ctx) error {
-		pathParam := router.GetCloudfare(c)
-
+		pathParam := c.Params("*")
 		if pathParam != "" {
 			newString := strings.Split(pathParam, "/")
 			check := newString[len(newString)-1]
@@ -102,8 +100,7 @@ func main() {
 	})
 
 	app.Delete("/api/*", func(c *fiber.Ctx) error {
-		pathParam := router.GetCloudfare(c)
-
+		pathParam := c.Params("*")
 		if pathParam != "" {
 			newString := strings.Split(pathParam, "/")
 			check := newString[len(newString)-1]
@@ -118,7 +115,7 @@ func main() {
 	})
 
 	app.Post("/api/*", func(c *fiber.Ctx) error {
-		pathParam := router.GetCloudfare(c)
+		pathParam := c.Params("*")
 
 		if pathParam != "" {
 			newString := strings.Split(pathParam, "/")
@@ -134,7 +131,7 @@ func main() {
 	})
 
 	app.Post("/api/*", func(c *fiber.Ctx) error {
-		pathParam := router.GetCloudfare(c)
+		pathParam := c.Params("*")
 
 		if pathParam != "" {
 			newString := strings.Split(pathParam, "/")
@@ -150,7 +147,7 @@ func main() {
 	})
 
 	app.Put("/api/*", func(c *fiber.Ctx) error {
-		pathParam := router.GetCloudfare(c)
+		pathParam := c.Params("*")
 
 		if pathParam != "" {
 			newString := strings.Split(pathParam, "/")
