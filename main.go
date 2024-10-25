@@ -15,6 +15,7 @@ import (
 	"github.com/Kriwn/Go_Reverse_Proxy/RedisPkg"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/proxy"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/redis/go-redis/v9"
 	"github.com/valyala/fasthttp"
 )
@@ -76,6 +77,11 @@ func Forward(c *fiber.Ctx, rdb *redis.Client, ctx context.Context, key string) e
 
 func main() {
 	app := fiber.New()
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+		AllowCredentials: true,
+
+	}))
 
 	err := godotenv.Load(".env")
 	if err != nil {
