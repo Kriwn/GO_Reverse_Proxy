@@ -79,8 +79,7 @@ func main() {
 	app := fiber.New()
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
-		AllowCredentials: true,
-
+		AllowHeaders: "Origin, Content-Type, Accept",
 	}))
 
 	err := godotenv.Load(".env")
