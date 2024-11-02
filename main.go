@@ -10,7 +10,6 @@ import (
 
 	// "mime/multipart"
 	"net/http"
-	"strings"
 
 	"github.com/Kriwn/Go_Reverse_Proxy/RedisPkg"
 	"github.com/gofiber/fiber/v2"
@@ -54,7 +53,7 @@ func get(c *fiber.Ctx, rdb *redis.Client, ctx context.Context, pathParam string)
 }
 
 // nedd to add user id in body to pass proxy to delete
-func Forward(c *fiber.Ctx, rdb *redis.Client, ctx context.Context, key string) error {
+func Forward(c *fiber.Ctx, rdb *redis.Client, ctx context.Context, key string,pathTodel string) error {
 	// Perform a proxy forward for the DELETE request
 	url := os.Getenv("DB_URL")
 	err := proxy.Forward(url+key, &fasthttp.Client{
@@ -65,12 +64,101 @@ func Forward(c *fiber.Ctx, rdb *redis.Client, ctx context.Context, key string) e
 		return c.Status(505).SendString("Failed to forward request")
 	}
 
-	//Remove the key from Redis cache
-	newString := strings.Split(key, "/")
-	err = redisPkg.RemoveFromKey(rdb, ctx, newString[0]+"/get")
-	if err != nil {
-		return c.Status(505).SendString("Failed to remove in redis cache")
+	if pathTodel != ""{
+		err = redisPkg.RemoveFromKey(rdb, ctx, pathTodel)
+		if err != nil {
+			return c.Status(505).SendString("Failed to remove in redis cache")
+		}
 	}
+	return nil
+}
+
+
+func userApi(app *fiber.App,rdb *redis.Client,ctx context.Context) error{
+
+	app.Get("/api/user/getAllUser",func(c *fiber.Ctx) error {
+		return get(c, rdb, ctx,"user/getAllUser")
+	})
+
+	app.Post("/api/user/getUserByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"user/getUserByID","")
+	})
+
+	app.Post("/api/user/login",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"user/login","")
+	})
+
+	//not test
+	app.Post("/api/user/post",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"user/post","user/getAllUser")
+	})
+
+	app.Put("/api/user/updateUserByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"user/updateUserByID","user/getAllUser")
+	})
+
+	//not test
+	app.Delete("/api/user/deleteUserByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"user/deleteUserByID","user/getAllUser")
+	})
+
+	return nil
+}
+
+func petApi(app *fiber.App,rdb *redis.Client,ctx context.Context) error{
+
+	app.Get("/api/pet/getAllPet",func(c *fiber.Ctx) error {
+		return get(c, rdb, ctx,"pet/getAllPet")
+	})
+
+	app.Post("/api/pet/getPetByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"pet/getPetByID","")
+	})
+
+	app.Post("/api/pet/post",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"pet/post","pet/getAllPet")
+	})
+
+	app.Put("/api/pet/updatePetByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"pet/updatePetByID","pet/getAllPet")
+	})
+
+	app.Delete("/api/pet/deletePetByID",func(c *fiber.Ctx) error {
+		return Forward(c, rdb, ctx,"pet/deletePetByID","pet/getAllPet")
+	})
+
+	return nil
+}
+
+func adoptionApi(app *fiber.App,rdb *redis.Client,ctx context.Context) error {
+
+	app.Get("/api/adoption/getAllAdoption",func(c *fiber.Ctx) error {
+		return get(c,rdb,ctx,"adoption/getAllAdoption")
+	})
+
+	app.Post("/api/adoption/getAdoptionByID",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/getAdoptionByID","")
+	})
+
+	app.Post("/api/adoption/post",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/post","adoption/getAllAdoption")
+	})
+
+	app.Put("/api/adoption/updateAdoptionByID",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/updateAdoptionByID","adoption/getAllAdoption")
+	})
+
+	app.Put("/api/adoption/adopt",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/adopt","adoption/getAllAdoption")
+	})
+
+	app.Delete("/api/adoption/delete",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/delete","adoption/getAllAdoption")
+	})
+
+	app.Get("/api/adoption/history",func(c *fiber.Ctx) error {
+		return Forward(c,rdb,ctx,"adoption/history","")
+	})
 
 	return nil
 }
@@ -89,83 +177,10 @@ func main() {
 
 	rdb, ctx := redisPkg.InitRedis()
 
-	app.Get("/api/*", func(c *fiber.Ctx) error {
-		pathParam := c.Params("*")
-		if pathParam != "" {
-			newString := strings.Split(pathParam, "/")
-			check := newString[len(newString)-1]
 
-			if check == "get" {
-				return get(c, rdb, ctx, pathParam)
-			}
-			return c.Status(400).SendString("Invalid endpoint")
-		}
-
-		return c.Status(400).SendString("Path parameter missing")
-	})
-
-	app.Delete("/api/*", func(c *fiber.Ctx) error {
-		pathParam := c.Params("*")
-		if pathParam != "" {
-			newString := strings.Split(pathParam, "/")
-			check := newString[len(newString)-1]
-
-			if check == "delete" {
-				return Forward(c, rdb, ctx, pathParam)
-			}
-			return c.Status(400).SendString("Invalid endpoint")
-		}
-
-		return c.Status(400).SendString("Path parameter missing")
-	})
-
-	app.Post("/api/*", func(c *fiber.Ctx) error {
-		pathParam := c.Params("*")
-
-		if pathParam != "" {
-			newString := strings.Split(pathParam, "/")
-			check := newString[len(newString)-1]
-
-			if check == "post" {
-				return Forward(c, rdb, ctx, pathParam)
-			}
-			return c.Status(400).SendString("Invalid endpoint")
-		}
-
-		return c.Status(400).SendString("Path parameter missing")
-	})
-
-	app.Post("/api/*", func(c *fiber.Ctx) error {
-		pathParam := c.Params("*")
-
-		if pathParam != "" {
-			newString := strings.Split(pathParam, "/")
-			check := newString[len(newString)-1]
-
-			if check == "post" {
-				return Forward(c, rdb, ctx, pathParam)
-			}
-			return c.Status(400).SendString("Invalid endpoint")
-		}
-
-		return c.Status(400).SendString("Path parameter missing")
-	})
-
-	app.Put("/api/*", func(c *fiber.Ctx) error {
-		pathParam := c.Params("*")
-
-		if pathParam != "" {
-			newString := strings.Split(pathParam, "/")
-			check := newString[len(newString)-1]
-
-			if check == "put" {
-				return Forward(c, rdb, ctx, pathParam)
-			}
-			return c.Status(400).SendString("Invalid endpoint")
-		}
-
-		return c.Status(400).SendString("Path parameter missing")
-	})
+	userApi(app,rdb,ctx)
+	petApi(app,rdb,ctx)
+	adoptionApi(app,rdb,ctx)
 
 	log.Fatal(app.Listen(":4243"))
 }
