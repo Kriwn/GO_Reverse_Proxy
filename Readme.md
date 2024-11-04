@@ -11,6 +11,6 @@ This application is a Go-based API that provides endpoints for managing users, p
 
 
 ## Docker
-	docker build -t Reverse_Proxy:lastest .
+	docker build -t reverse-proxy:lastest .
 
 
