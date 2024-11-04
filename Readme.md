@@ -8,3 +8,9 @@ This application is a Go-based API that provides endpoints for managing users, p
 - **Pet Management**: APIs to manage pets, including retrieving all pets and performing CRUD operations on individual pets.
 - **Adoption Management**: APIs to handle adoptions, including retrieving adoption history and performing CRUD operations.
 - **Caching with Redis**: The application caches responses in Redis to speed up frequent requests.
+
+
+## Docker
+	docker build -t Reverse_Proxy:lastest .
+
+
